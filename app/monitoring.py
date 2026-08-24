@@ -14,6 +14,19 @@ def _class(value: Any, default: str = "Não identificado") -> str:
     return str(value or default)
 
 
+def _risk_tags(value: Any) -> list[str]:
+    if isinstance(value, dict): value = value.get("classificacao")
+    if isinstance(value, list): values = value
+    else:
+        text = str(value or "").strip()
+        try:
+            parsed = json.loads(text.replace("'", '"')) if text.startswith("[") else None
+        except (ValueError, TypeError): parsed = None
+        values = parsed if isinstance(parsed, list) else [text]
+    ignored = {"", "Não Aplicável", "Nao Aplicavel", "Não identificado"}
+    return sorted({str(x).strip() for x in values if str(x).strip() not in ignored})
+
+
 def _case(a: dict) -> str:
     impacts = a.get("impacts", {})
     high = sum(_class(v).lower() == "alto" for v in impacts.values() if isinstance(v, dict))
@@ -56,7 +69,7 @@ def monitoring_dashboard(batch_id: str | None = None, product: str | None = None
     if month:
         where.append("substr(i.analysis_date,6,2)=?"); params.append(f"{month:02d}")
     sql = """SELECT i.id,i.batch_id,i.filename,i.product,i.motive,i.score_operator,
-             i.score_experience,i.analysis_date,i.created_at,i.analysis_json,b.name AS batch_name
+             i.score_experience,i.analysis_date,i.created_at,i.analysis_json,b.name AS batch_name,b.uploaded_by
              FROM interactions i JOIN analysis_batches b ON b.id=i.batch_id"""
     if where:
         sql += " WHERE " + " AND ".join(where)
@@ -76,6 +89,8 @@ def monitoring_dashboard(batch_id: str | None = None, product: str | None = None
         pillars = _pillar_scores(a)
         root = a.get("root_cause", {})
         nlp = a.get("nlp", {})
+        impacts = {k: _class(v) for k, v in a.get("impacts", {}).items()}
+        regulatory_tags = _risk_tags((a.get("impacts", {}).get("imp5_risco_reclamacao") or {}))
         rows.append({
             **row, "operator": attendant, "protocol": protocol,
             "summary": a.get("resumo", ""), "dissatisfaction": a.get("principal_insatisfacao", ""),
@@ -83,7 +98,7 @@ def monitoring_dashboard(batch_id: str | None = None, product: str | None = None
             "effort": _class(a.get("nivel_esforco_cliente")), "recontact": _class(a.get("probabilidade_recontato")),
             "customer_mood": _class(a.get("humor_cliente")), "responsibility": a.get("responsabilidade", "Não identificado"),
             "friction": _class(a.get("cx1_friccao")), "case": _case(a), "pillars": pillars,
-            "impacts": {k: _class(v) for k, v in a.get("impacts", {}).items()},
+            "impacts": impacts, "regulatory_risks": regulatory_tags,
             "root_cause": root.get("causaraiz1_descricao", path.get("root", "Não identificado")),
             "root_reason": root.get("causaraiz2_motivo", ""), "root_owner": root.get("causaraiz3_dono_jornada", ""),
             "root_evidence": root.get("causaraiz4_evidencia", []), "journey": path,
@@ -134,8 +149,13 @@ def monitoring_dashboard(batch_id: str | None = None, product: str | None = None
     }
     risks = []
     for key, label in risk_keys.items():
-        levels = Counter(r["impacts"].get(key, "Não Aplicável") for r in rows)
-        risks.append({"key": key, "label": label, "levels": dict(levels), "high": levels.get("Alto", 0)})
+        if key == "imp5_risco_reclamacao":
+            levels = Counter(tag for r in rows for tag in r["regulatory_risks"])
+            affected = sum(bool(r["regulatory_risks"]) for r in rows)
+            risks.append({"key":key,"label":label,"levels":dict(levels),"high":affected,"affected":affected})
+        else:
+            levels = Counter(r["impacts"].get(key, "Não Aplicável") for r in rows)
+            risks.append({"key":key,"label":label,"levels":dict(levels),"high":levels.get("Alto",0),"affected":sum(v for k,v in levels.items() if k != "Não Aplicável")})
 
     failed_criteria = Counter()
     for row in rows:
@@ -152,12 +172,21 @@ def monitoring_dashboard(batch_id: str | None = None, product: str | None = None
         "distributions": {"cases": _top(cases, total), "responsibilities": _top(responsibilities, total),
                           "recontacts": _top(recontacts, total), "efforts": _top(efforts, total),
                           "products": _top(products, total), "root_causes": _top(roots, total)},
-        "operators": operators, "interactions": rows[:500], "risks": risks,
+        "operators": operators, "interactions": rows, "risks": risks,
+        "data_quality": {"operator_identified":sum(r["operator"] != "Não identificado" for r in rows),
+                         "operator_missing":sum(r["operator"] == "Não identificado" for r in rows),
+                         "operator_coverage":round(sum(r["operator"] != "Não identificado" for r in rows)*100/total,1) if total else 0},
         "insights": {
             "separation": round(avg("score_operator") - avg("score_experience"), 1),
             "high_recontact": recontacts.get("Alto", 0) + recontacts.get("Alta", 0),
             "systemic": sum(responsibilities[x] for x in ("Plataforma", "Política", "Processo")),
             "training_topics": _top(failed_criteria, total, 5),
+            "goals": {
+                "score_operator":{"current":avg("score_operator"),"target":round(min(100,avg("score_operator")+8),1),"direction":"increase","unit":"pontos"},
+                "experience":{"current":avg("score_experience"),"target":round(min(100,avg("score_experience")+10),1),"direction":"increase","unit":"pontos"},
+                "resolution":{"current":round(resolved_count*100/total,1) if total else 0,"target":round(min(100,(resolved_count*100/total if total else 0)+15),1),"direction":"increase","unit":"%"},
+                "critical_alerts":{"current":cases.get("Alerta Crítico",0),"target":max(0,round(cases.get("Alerta Crítico",0)*.7)),"direction":"decrease","unit":"casos"},
+            },
         },
         "nlp_audit": {"processed":len(nlp_rows),"confidence_average":nlp_confidence,"abstained":nlp_abstained,
                       "regex_nlp_concordant":concordant,"divergent_or_complementary":len(nlp_rows)-concordant,

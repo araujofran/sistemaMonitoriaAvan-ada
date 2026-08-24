@@ -332,9 +332,9 @@ async def upload_preflight(files: list[UploadFile] = File(...)):
 
 
 @app.post("/api/v1/batches")
-async def upload_batch(files: list[UploadFile] = File(...), reanalyze: bool = False):
+async def upload_batch(request: Request, files: list[UploadFile] = File(...), reanalyze: bool = False):
     with TemporaryDirectory() as folder:
-        return process_paths(await _save_uploads(files,folder),"Upload via API",reanalyze)
+        return process_paths(await _save_uploads(files,folder),"Upload via API",reanalyze,request.state.user["username"])
 
 
 @app.get("/api/v1/interactions/{interaction_id}/export", response_class=PlainTextResponse)

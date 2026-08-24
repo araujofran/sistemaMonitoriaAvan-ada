@@ -18,7 +18,8 @@ SCHEMA = """
 PRAGMA foreign_keys=ON;
 CREATE TABLE IF NOT EXISTS analysis_batches (
  id TEXT PRIMARY KEY, name TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
- total_files INTEGER DEFAULT 0, processed_files INTEGER DEFAULT 0, failed_files INTEGER DEFAULT 0, skipped_files INTEGER DEFAULT 0
+ total_files INTEGER DEFAULT 0, processed_files INTEGER DEFAULT 0, failed_files INTEGER DEFAULT 0, skipped_files INTEGER DEFAULT 0,
+ uploaded_by TEXT
 );
 CREATE TABLE IF NOT EXISTS interactions (
  id TEXT PRIMARY KEY, batch_id TEXT NOT NULL REFERENCES analysis_batches(id), filename TEXT NOT NULL,
@@ -104,6 +105,8 @@ def init_db() -> None:
         batch_columns = {row["name"] for row in db.execute("PRAGMA table_info(analysis_batches)")}
         if "skipped_files" not in batch_columns:
             db.execute("ALTER TABLE analysis_batches ADD COLUMN skipped_files INTEGER DEFAULT 0")
+        if "uploaded_by" not in batch_columns:
+            db.execute("ALTER TABLE analysis_batches ADD COLUMN uploaded_by TEXT")
         db.execute("CREATE INDEX IF NOT EXISTS ix_interactions_fingerprint ON interactions(fingerprint)")
         db.execute("CREATE INDEX IF NOT EXISTS ix_interactions_analysis_date ON interactions(analysis_date)")
         missing = [dict(r) for r in db.execute("SELECT id FROM interactions WHERE fingerprint IS NULL OR fingerprint='' OR analysis_date IS NULL")]
@@ -114,10 +117,10 @@ def init_db() -> None:
             db.execute("UPDATE interactions SET fingerprint=COALESCE(fingerprint,?),analysis_date=COALESCE(analysis_date,date(created_at)) WHERE id=?", (fingerprint,row["id"]))
 
 
-def create_batch(name: str, total: int) -> str:
+def create_batch(name: str, total: int, uploaded_by: str | None = None) -> str:
     batch_id = str(uuid4())
     with connect() as db:
-        db.execute("INSERT INTO analysis_batches(id,name,status,total_files) VALUES(?,?,?,?)", (batch_id,name,"PROCESSING",total))
+        db.execute("INSERT INTO analysis_batches(id,name,status,total_files,uploaded_by) VALUES(?,?,?,?,?)", (batch_id,name,"PROCESSING",total,uploaded_by))
     return batch_id
 
 

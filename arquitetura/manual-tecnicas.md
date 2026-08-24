@@ -39,3 +39,11 @@ Admin possui ações administrativas; Gestão consulta produtos autorizados; Esp
 ## 8. Evolução planejada
 
 Embeddings, busca semântica, NLI, reranqueamento e modelos supervisionados só deverão entrar quando houver base validada, medição de precisão e decisão arquitetural própria. Uma biblioteca nova não transforma hipótese em fato; a evidência e a revisão continuam obrigatórias.
+
+## 9. Monitoria 360°, rastreabilidade e metas
+
+O painel devolve todos os atendimentos do recorte para permitir busca, filtro de risco e exportação rastreável. Riscos multivalorados são normalizados como categorias individuais, nunca apresentados como representação interna de lista.
+
+Operador monitorado e usuário que enviou o lote são identidades distintas. O primeiro vem exclusivamente de coluna `ATENDENTE`, `OPERADOR` ou `AGENTE`; o segundo passa a ser registrado em `analysis_batches.uploaded_by`. Quando a fonte histórica não contém operador, o painel informa a cobertura em vez de inventar uma atribuição.
+
+As metas são propostas sobre a linha de base filtrada: +8 pontos no Score Operador, +10 em Experiência, +15 pontos percentuais de resolução e redução de 30% dos alertas críticos, sempre respeitando os limites válidos. Elas orientam o próximo ciclo, mas não alteram resultados históricos.

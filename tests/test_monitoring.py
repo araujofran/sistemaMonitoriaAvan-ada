@@ -36,6 +36,8 @@ def test_monitoring_dashboard_aggregates_database():
     assert result["kpis"]["avg_operator"] == 80
     assert result["operators"][0]["name"] == "Ana"
     assert result["interactions"][0]["root_cause"] == "Prazo"
+    assert result["data_quality"]["operator_coverage"] == 100
+    assert result["insights"]["goals"]["score_operator"] == {"current":80.0,"target":88.0,"direction":"increase","unit":"pontos"}
 
 
 def test_monitoring_filters_and_chat_use_same_database():
@@ -44,3 +46,17 @@ def test_monitoring_filters_and_chat_use_same_database():
     response = monitoring_answer("Qual é o score?")
     assert "80.0" in response["answer"]
     assert response["evidence"]["kpis"]["interactions"] == 1
+
+
+def test_regulatory_risk_lists_are_normalized_and_traceable():
+    _insert()
+    with connect() as db:
+        row = db.execute("SELECT analysis_json FROM interactions WHERE id='i1'").fetchone()
+        analysis = json.loads(row[0])
+        analysis["impacts"]["imp5_risco_reclamacao"] = {"classificacao":["BACEN","Judicial","BACEN"]}
+        db.execute("UPDATE interactions SET analysis_json=? WHERE id='i1'", (json.dumps(analysis),))
+    result = monitoring_dashboard()
+    regulatory = next(x for x in result["risks"] if x["key"] == "imp5_risco_reclamacao")
+    assert regulatory["levels"] == {"BACEN":1,"Judicial":1}
+    assert regulatory["high"] == 1
+    assert result["interactions"][0]["regulatory_risks"] == ["BACEN","Judicial"]

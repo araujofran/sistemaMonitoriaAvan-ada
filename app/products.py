@@ -55,6 +55,8 @@ def infer_attendant(metadata: dict[str, Any], fallback: str = "Não identificado
     product_words = {"veiculos", "cartao", "consignado", "sac", "cac", "credito", "emprestimo", "financiamento"}
     for value in candidates:
         words = set(plain(value).split())
-        if value and len(value.split()) >= 2 and not words.intersection(product_words):
+        # A coluna explicitamente nomeada já fornece o contexto. Nomes simples,
+        # matrículas e logins são identificadores válidos de operador.
+        if value and not words.intersection(product_words) and not value.isdigit():
             return value, "metadata"
     return fallback, "análise"

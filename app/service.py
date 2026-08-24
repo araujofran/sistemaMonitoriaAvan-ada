@@ -56,10 +56,11 @@ def preflight_paths(paths: list[Path]) -> dict:
     return {"records":len(records),"new":new_records,"duplicates":duplicates,"duplicate_count":len(duplicates),"errors":import_errors}
 
 
-def process_paths(paths: list[Path], batch_name: str = "Lote", reanalyze: bool = False) -> dict:
+def process_paths(paths: list[Path], batch_name: str = "Lote", reanalyze: bool = False,
+                  uploaded_by: str | None = None) -> dict:
     init_db()
     records, import_errors = load_sources(paths)
-    batch_id = create_batch(batch_name, len(records) + len(import_errors))
+    batch_id = create_batch(batch_name, len(records) + len(import_errors), uploaded_by)
     processed, failed, skipped, overwritten, items = 0, len(import_errors), 0, 0, list(import_errors)
     existing_by_hash = {}
     for record in records:
