@@ -11,6 +11,7 @@ from .importers import SourceRecord, load_sources
 from .products import infer_attendant, infer_product, normalize_key
 from .journey import interaction_path
 from .nlp_engine import analyze_nlp
+from .causal_engine import analyze_causal_funnel
 
 
 def analyze_text(text: str, filename: str = "transcricao.txt", metadata: dict | None = None) -> tuple[list, dict]:
@@ -32,8 +33,9 @@ def analyze_text(text: str, filename: str = "transcricao.txt", metadata: dict | 
         value = next((normalized[a] for a in aliases if a in normalized and normalized[a] not in (None,"")), None)
         if value is not None:
             analysis[target] = str(value)
-    analysis["journey"] = interaction_path(analysis)
     analysis["nlp"] = analyze_nlp(text, turns)
+    analysis["causal_funnel"] = analyze_causal_funnel(analysis)
+    analysis["journey"] = interaction_path(analysis)
     validate_analysis(analysis)
     return turns, analysis
 

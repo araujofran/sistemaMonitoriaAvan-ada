@@ -51,6 +51,16 @@ CREATE TABLE IF NOT EXISTS nlp_results (
  interaction_id TEXT PRIMARY KEY REFERENCES interactions(id), model_version TEXT NOT NULL,
  provider TEXT NOT NULL, confidence REAL, result_json TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS causal_analysis_results (
+ interaction_id TEXT PRIMARY KEY REFERENCES interactions(id), model_version TEXT NOT NULL,
+ mode TEXT NOT NULL DEFAULT 'shadow', confidence REAL NOT NULL DEFAULT 0, status TEXT NOT NULL,
+ result_json TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS causal_analysis_reviews (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, interaction_id TEXT NOT NULL REFERENCES interactions(id),
+ decision TEXT NOT NULL, corrected_root TEXT, reviewer_id INTEGER, notes TEXT,
+ model_version TEXT NOT NULL, reviewed_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE IF NOT EXISTS scoring_policy_state (
  id INTEGER PRIMARY KEY CHECK(id=1), policy TEXT NOT NULL DEFAULT 'rigid', version TEXT NOT NULL DEFAULT 'rigid-1.0',
  activated_by INTEGER, activated_at TEXT DEFAULT CURRENT_TIMESTAMP, operation_id TEXT
@@ -154,6 +164,10 @@ def save_interaction(batch_id: str, filename: str, raw: str, turns: Iterable, an
         if nlp:
             db.execute("INSERT OR REPLACE INTO nlp_results(interaction_id,model_version,provider,confidence,result_json) VALUES(?,?,?,?,?)",
                 (interaction_id,nlp.get("version","unknown"),nlp.get("provider","local"),nlp.get("confidence",0),json.dumps(nlp,ensure_ascii=False)))
+        causal = analysis.get("causal_funnel")
+        if causal:
+            db.execute("INSERT OR REPLACE INTO causal_analysis_results(interaction_id,model_version,mode,confidence,status,result_json) VALUES(?,?,?,?,?,?)",
+                (interaction_id,causal.get("version","unknown"),causal.get("mode","shadow"),causal.get("confidence",0),causal.get("status","Não determinada"),json.dumps(causal,ensure_ascii=False)))
     return interaction_id, True
 
 
@@ -188,6 +202,22 @@ def enrich_existing_nlp() -> dict:
     return {"updated":updated,"skipped":skipped}
 
 
+def enrich_existing_causal() -> dict:
+    from .causal_engine import analyze_causal_funnel
+    init_db(); updated = 0
+    with connect() as db:
+        rows = [dict(r) for r in db.execute("SELECT id,analysis_json FROM interactions")]
+        for row in rows:
+            analysis = json.loads(row["analysis_json"])
+            causal = analyze_causal_funnel(analysis)
+            analysis["causal_funnel"] = causal
+            db.execute("UPDATE interactions SET analysis_json=? WHERE id=?", (json.dumps(analysis,ensure_ascii=False),row["id"]))
+            db.execute("INSERT OR REPLACE INTO causal_analysis_results(interaction_id,model_version,mode,confidence,status,result_json) VALUES(?,?,?,?,?,?)",
+                (row["id"],causal["version"],causal["mode"],causal["confidence"],causal["status"],json.dumps(causal,ensure_ascii=False)))
+            updated += 1
+    return {"updated":updated,"mode":"shadow"}
+
+
 def list_batches() -> list[dict]:
     with connect() as db:
         return [dict(r) for r in db.execute("SELECT * FROM analysis_batches ORDER BY created_at DESC")]
@@ -219,7 +249,7 @@ def _delete_interaction_rows(db: sqlite3.Connection, interaction_ids: list[str])
     if not interaction_ids:
         return
     placeholders = ",".join("?" for _ in interaction_ids)
-    for table in ("nlp_results", "evidences", "transcript_turns", "monitoring_criteria_results", "interaction_metadata"):
+    for table in ("causal_analysis_reviews", "causal_analysis_results", "nlp_results", "evidences", "transcript_turns", "monitoring_criteria_results", "interaction_metadata"):
         db.execute(f"DELETE FROM {table} WHERE interaction_id IN ({placeholders})", interaction_ids)
     db.execute(f"DELETE FROM interactions WHERE id IN ({placeholders})", interaction_ids)
 

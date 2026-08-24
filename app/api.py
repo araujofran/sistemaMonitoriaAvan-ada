@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from .catalog import DETECTORS
 from .config import BASE_DIR, MAX_FILE_BYTES
-from .database import (batch_summary, clear_database, create_database_backup, enrich_existing_nlp, get_interaction,
+from .database import (batch_summary, clear_database, create_database_backup, enrich_existing_causal, enrich_existing_nlp, get_interaction,
     history, init_db, list_batches, list_database_backups, list_interactions_by_product,
     list_periods, list_products)
 from .diagnostics import recent_errors, record_error, system_diagnostics
@@ -239,6 +239,10 @@ def diagnostic_errors(limit: int = 30): return recent_errors(limit)
 
 @app.post("/api/v1/admin/nlp/enrich")
 def enrich_nlp(): return enrich_existing_nlp()
+
+
+@app.post("/api/v1/admin/causal/enrich")
+def enrich_causal(): return enrich_existing_causal()
 
 
 @app.delete("/api/v1/admin/data")

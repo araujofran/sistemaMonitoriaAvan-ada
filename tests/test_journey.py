@@ -17,8 +17,8 @@ def test_generic_root_is_not_presented_as_technical_fact():
     }
     path = interaction_path(analysis)
     assert path["voice"] == "quero cancelar"
-    assert path["root"] == "Política — mecanismo técnico não determinado"
-    assert path["root_confidence"] == "Categorial"
+    assert path["root"] == "Dificuldade ou necessidade de cancelamento/estorno"
+    assert path["root_confidence"].startswith("Hipótese causal")
 
 
 def test_journey_dashboard_contract():

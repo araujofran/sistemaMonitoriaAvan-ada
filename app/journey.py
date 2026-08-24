@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from .database import connect
+from .causal_engine import analyze_causal_funnel
 
 UNKNOWN_MARKERS = ("nao identific", "não identific", "nao aplic", "não aplic", "evidencia tecnica insuficiente", "evid�ncia t�cnica insuficiente")
 GENERIC_ROOT_MARKERS = ("nao permite determinar", "não permite determinar", "n�o permite determinar")
@@ -55,7 +56,8 @@ def extract_customer_voice(analysis: dict) -> str:
     return max(candidates, default=(0, 0, "Sem fala causal suficiente"))[2][:240]
 
 
-def interaction_path(analysis: dict) -> dict[str, str]:
+def interaction_path(analysis: dict) -> dict[str, Any]:
+    causal = analysis.get("causal_funnel") or analyze_causal_funnel(analysis)
     root = analysis.get("root_cause", {})
     voice = extract_customer_voice(analysis)
     presented = _presented_category(analysis)
@@ -68,11 +70,14 @@ def interaction_path(analysis: dict) -> dict[str, str]:
     responsibility = analysis.get("responsabilidade") or "Não identificado"
     root_reason = root.get("causaraiz2_motivo")
     generic = not _usable(root_reason) or any(marker in _plain(root_reason) for marker in GENERIC_ROOT_MARKERS)
-    root_cause = f"{friction} — mecanismo técnico não determinado" if generic else str(root_reason)
+    root_cause = str(causal["root_candidate"]) if causal.get("status") != "Não determinada" else (f"{friction} — mecanismo técnico não determinado" if generic else str(root_reason))
     return {
         "voice": str(voice), "presented": str(presented), "motivating": str(motivating),
         "friction": str(friction), "responsibility": str(responsibility), "root": root_cause,
-        "root_confidence": "Categorial" if generic else "Com evidência específica",
+        "root_confidence": str(causal.get("status") or ("Categorial" if generic else "Com evidência específica")),
+        "causal_confidence": float(causal.get("confidence") or 0),
+        "journey_stage": str(causal.get("journey_stage") or "Não determinada"),
+        "causal_evidence": causal.get("evidence") or [],
     }
 
 
@@ -97,7 +102,7 @@ def journey_dashboard(batch_id: str | None = None, product: str | None = None) -
         analysis = json.loads(row.pop("analysis_json"))
         path = interaction_path(analysis)
         for key in stages: stages[key][path[key]] += 1
-        root_specific += int(path["root_confidence"] == "Com evidência específica")
+        root_specific += int(path["root_confidence"] in {"Com evidência específica", "Causa comprovada", "Hipótese causal forte"})
         friction_count += int(analysis.get("cx1_friccao", {}).get("classificacao") == "Sim")
         paths.append({**row, **path})
     total = len(rows)

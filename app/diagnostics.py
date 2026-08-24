@@ -51,7 +51,7 @@ def system_diagnostics() -> dict:
             size = database_path.stat().st_size
             with sqlite3.connect(database_path) as db:
                 integrity = db.execute("PRAGMA quick_check").fetchone()[0]
-                for table in ("analysis_batches", "interactions", "transcript_turns", "evidences", "monitoring_criteria_results", "nlp_results"):
+                for table in ("analysis_batches", "interactions", "transcript_turns", "evidences", "monitoring_criteria_results", "nlp_results", "causal_analysis_results", "causal_analysis_reviews"):
                     counts[table] = db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
             status = "ok"
     except Exception as exc:

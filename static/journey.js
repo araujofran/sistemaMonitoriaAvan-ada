@@ -39,7 +39,7 @@ function renderBars(items){
 }
 
 function renderPaths(items){
-  $('#path-count').textContent=`${items.length} trilhas exibidas`;$('#path-rows').innerHTML=items.map(x=>`<tr onclick="location.href='/reports/${encodeURIComponent(x.id)}'"><td><strong>${esc(x.product)}</strong><br><small>${esc(x.filename)}</small></td><td class="voice-cell">“${esc(x.voice)}”</td><td>${esc(x.motivating)}</td><td>${esc(x.friction)}<br><small>${esc(x.responsibility)}</small></td><td>${esc(x.root)}<br><span class="root-confidence">${esc(x.root_confidence)}</span></td></tr>`).join('');
+  $('#path-count').textContent=`${items.length} trilhas exibidas`;$('#path-rows').innerHTML=items.map(x=>`<tr onclick="location.href='/reports/${encodeURIComponent(x.id)}'"><td><strong>${esc(x.product)}</strong><br><small>${esc(x.filename)}</small></td><td class="voice-cell">“${esc(x.voice)}”<br><small>${esc((x.causal_evidence||[]).slice(0,2).join(' · '))}</small></td><td>${esc(x.motivating)}</td><td>${esc(x.journey_stage)}<br><small>${esc(x.friction)}</small></td><td>${esc(x.root)}<br><span class="root-confidence">${esc(x.root_confidence)} · ${Math.round((x.causal_confidence||0)*100)}%</span></td></tr>`).join('');
 }
 
 async function loadDashboard(){

@@ -1,2 +1,2 @@
 .panel { display: block; }
-
+.causal-notice{display:flex;gap:12px;align-items:center;margin:-4px 0 18px;padding:12px 14px;border:1px solid #bdd1ff;background:#f3f7ff;border-radius:9px;color:#3b4a69;font-size:13px}.causal-notice strong{color:#2858d6;white-space:nowrap}
