@@ -49,3 +49,7 @@ Operador monitorado e usuário que enviou o lote são identidades distintas. O p
 Quando não existe coluna de operador, o motor também procura autoapresentação explícita em turnos rotulados como atendente: `me chamo`, `eu me chamo`, `meu nome é` e `quem fala é`. A extração persiste o nome, a origem e o trecho de evidência. Frases contextuais como “a informação aqui é” são deliberadamente excluídas para evitar falso positivo.
 
 As metas são propostas sobre a linha de base filtrada: +8 pontos no Score Operador, +10 em Experiência, +15 pontos percentuais de resolução e redução de 30% dos alertas críticos, sempre respeitando os limites válidos. Elas orientam o próximo ciclo, mas não alteram resultados históricos.
+
+## 10. Migrações automáticas por produto
+
+Cada banco possui `data_migrations`, com versão, descrição, resultado e data. O startup percorre os produtos autorizados pela governança, executa apenas versões ausentes, cria backup quando necessário e registra a conclusão. O mecanismo é idempotente: reiniciar o servidor não repete uma versão já aplicada. Essa é a via oficial para enriquecimentos retroativos; endpoints administrativos permanecem apenas para diagnóstico e manutenção excepcional.

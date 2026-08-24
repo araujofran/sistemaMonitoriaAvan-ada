@@ -62,6 +62,10 @@ CREATE TABLE IF NOT EXISTS causal_analysis_reviews (
  decision TEXT NOT NULL, corrected_root TEXT, reviewer_id INTEGER, notes TEXT,
  model_version TEXT NOT NULL, reviewed_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS data_migrations (
+ version TEXT PRIMARY KEY, description TEXT NOT NULL, result_json TEXT NOT NULL DEFAULT '{}',
+ applied_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE IF NOT EXISTS scoring_policy_state (
  id INTEGER PRIMARY KEY CHECK(id=1), policy TEXT NOT NULL DEFAULT 'rigid', version TEXT NOT NULL DEFAULT 'rigid-1.0',
  activated_by INTEGER, activated_at TEXT DEFAULT CURRENT_TIMESTAMP, operation_id TEXT

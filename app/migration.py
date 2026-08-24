@@ -9,6 +9,7 @@ from .config import DATA_DIR, DATABASE_PATH
 from .tenancy import ACTIVE_DATABASE, product_database
 
 MARKER = DATA_DIR / "migrations" / "legacy_to_product_databases_v1.done"
+ATTENDANT_ENRICHMENT_VERSION = "data-2026-08-attendant-self-presentation-v1"
 
 
 def _plain(value: str) -> str:
@@ -57,3 +58,21 @@ def migrate_legacy_database() -> dict:
             db.execute("UPDATE analysis_batches SET processed_files=(SELECT COUNT(*) FROM interactions i WHERE i.batch_id=analysis_batches.id),total_files=(SELECT COUNT(*) FROM interactions i WHERE i.batch_id=analysis_batches.id)")
     MARKER.parent.mkdir(parents=True,exist_ok=True);MARKER.write_text(json.dumps(migrated,ensure_ascii=False),encoding="utf-8")
     return {"status":"completed","migrated":migrated}
+
+
+def run_product_data_migrations() -> dict:
+    """Executa migrações de conteúdo uma vez no banco de produto ativo."""
+    from .database import connect, create_database_backup, enrich_existing_attendants, init_db
+    init_db()
+    with connect() as db:
+        applied = db.execute("SELECT 1 FROM data_migrations WHERE version=?", (ATTENDANT_ENRICHMENT_VERSION,)).fetchone()
+        pending = db.execute("SELECT COUNT(*) FROM interactions WHERE json_extract(analysis_json,'$.atendente') IS NULL OR json_extract(analysis_json,'$.atendente') IN ('','Não identificado')").fetchone()[0]
+    if applied:
+        return {"version":ATTENDANT_ENRICHMENT_VERSION,"status":"already_applied"}
+    backup = create_database_backup("auto_before_" + ATTENDANT_ENRICHMENT_VERSION) if pending else None
+    result = enrich_existing_attendants() if pending else {"updated":0,"unresolved":0,"method":"sem dados pendentes"}
+    audit = {**result,"pending_before":pending,"backup":backup["filename"] if backup else None}
+    with connect() as db:
+        db.execute("INSERT INTO data_migrations(version,description,result_json) VALUES(?,?,?)",
+                   (ATTENDANT_ENRICHMENT_VERSION,"Extrai operador de autoapresentação explícita",json.dumps(audit,ensure_ascii=False)))
+    return {"version":ATTENDANT_ENRICHMENT_VERSION,"status":"applied",**audit}

@@ -5,3 +5,4 @@
 | 2026-08-24 | ADR-001 / `causal-shadow-1.0.0` | Funil causal explicável, persistência e exibição no painel de jornada | Nenhum: modo shadow, notas preservadas |
 | 2026-08-24 | ADR-002 | Monitoria 360° rastreável, riscos normalizados, auditoria de upload e metas quantitativas | Nenhum sobre notas; melhora apresentação e governança |
 | 2026-08-24 | Correção ADR-002 | Filtros materiais de risco, invalidação de cache e extração de operador por autoapresentação | 785 de 1.065 operadores recuperados no Consignado; notas preservadas |
+| 2026-08-24 | ADR-003 | Migrações automáticas e versionadas no banco isolado de cada produto | Remove dependência de retroprocessamento manual |

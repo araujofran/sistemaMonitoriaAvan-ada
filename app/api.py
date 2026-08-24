@@ -25,7 +25,7 @@ from .service import analyze_text, preflight_paths, process_paths
 from .governance import (authenticate, change_password, create_product, create_user, init_governance,
     list_governance, logout, session_user, update_user)
 from .tenancy import ACTIVE_DATABASE, product_database
-from .migration import migrate_legacy_database
+from .migration import migrate_legacy_database, run_product_data_migrations
 
 app = FastAPI(title="REGEX INTELLIGENCE — CX & Quality Analytics", version="1.0.0")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -105,6 +105,10 @@ def startup() -> None:
         try: init_db()
         finally: ACTIVE_DATABASE.reset(token)
     migrate_legacy_database()
+    for product in list_governance()["products"]:
+        token=ACTIVE_DATABASE.set(product_database(product["slug"]))
+        try: run_product_data_migrations()
+        finally: ACTIVE_DATABASE.reset(token)
 
 
 @app.get("/health")
@@ -158,7 +162,7 @@ def governance_data(): return list_governance()
 @app.post("/api/v1/admin/governance/products")
 def governance_product(request:Request,payload:ProductInput):
     product=create_product(payload.name,request.state.user["id"]);token=ACTIVE_DATABASE.set(product_database(product["slug"]))
-    try: init_db()
+    try: init_db(); run_product_data_migrations()
     finally: ACTIVE_DATABASE.reset(token)
     return product
 
