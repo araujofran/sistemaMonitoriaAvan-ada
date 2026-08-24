@@ -60,3 +60,25 @@ def infer_attendant(metadata: dict[str, Any], fallback: str = "Não identificado
         if value and not words.intersection(product_words) and not value.isdigit():
             return value, "metadata"
     return fallback, "análise"
+
+
+ATTENDANT_PRESENTATION_PATTERNS = (
+    re.compile(r"\b(?:eu\s+)?me chamo\s+([A-ZÀ-Ý][A-Za-zÀ-ÿ'’-]{1,29})", re.I),
+    re.compile(r"\bmeu nome\s+[eé]\s+([A-ZÀ-Ý][A-Za-zÀ-ÿ'’-]{1,29})", re.I),
+    re.compile(r"\bquem fala\s+[eé]\s+([A-ZÀ-Ý][A-Za-zÀ-ÿ'’-]{1,29})", re.I),
+)
+
+
+def extract_attendant_from_turns(turns: list[Any]) -> tuple[str, str]:
+    """Extrai somente autoapresentação explícita do turno do atendente."""
+    rejected = {"que", "uma", "com", "do", "da", "banco", "setor", "atendimento"}
+    for turn in turns:
+        speaker = turn.get("speaker") if isinstance(turn, dict) else getattr(turn, "speaker", "")
+        text = turn.get("text_original", "") if isinstance(turn, dict) else getattr(turn, "text_original", "")
+        if speaker != "ATENDENTE":
+            continue
+        for pattern in ATTENDANT_PRESENTATION_PATTERNS:
+            match = pattern.search(str(text))
+            if match and plain(match.group(1)) not in rejected:
+                return match.group(1).strip().title(), match.group(0).strip()
+    return "Não identificado", ""

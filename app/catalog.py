@@ -40,7 +40,7 @@ DETECTORS = [
     _d(14,"endereco","identification",r"\b(?:rua|avenida|av\.?|alameda|travessa)\s+[\wÀ-ÿ ]{3,}",criteria=("at_cx_intro2",)),
     _d(15,"saudacao","participants",r"\b(?:bom dia|boa tarde|boa noite|ol[aá]|seja bem[- ]vind[oa])\b","ATENDENTE",("at_cx_intro1","at_rel_cord3")),
     _d(16,"encerramento","participants",r"\b(?:agrade[çc]o o contato|tenha um bom dia|posso ajudar em algo mais|at[eé] logo)\b","ATENDENTE",("at_inad_compr5",)),
-    _d(17,"identificacao_atendente","participants",r"\b(?:meu nome [eé]|quem fala [eé])\s+[A-ZÀ-Ý][a-zà-ÿ]+","ATENDENTE",("at_cx_intro1",)),
+    _d(17,"identificacao_atendente","participants",r"\b(?:(?:eu\s+)?me chamo|meu nome [eé]|quem fala [eé])\s+[A-ZÀ-Ý][a-zà-ÿ'’-]+","ATENDENTE",("at_cx_intro1",)),
     _d(18,"identificacao_banco","participants",r"\b(?:banco|central de atendimento|financeira)\b","ATENDENTE",("at_cx_intro1",)),
     _d(19,"nome_cliente","participants",r"\b(?:meu nome [eé]|me chamo)\s+([A-ZÀ-Ý][a-zà-ÿ]+)","CLIENTE",("at_rel_cord1",)),
     _d(20,"tratamento_nome","participants",r"\b(?:senhor|senhora|sr\.?|sra\.?)\s+[A-ZÀ-Ý][a-zà-ÿ]+","ATENDENTE",("at_rel_cord1",)),
@@ -128,4 +128,3 @@ DETECTORS = [
 
 assert 80 <= len(DETECTORS) <= 150
 BY_NAME = {d.name: d for d in DETECTORS}
-

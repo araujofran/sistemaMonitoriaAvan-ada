@@ -92,7 +92,8 @@ def monitoring_dashboard(batch_id: str | None = None, product: str | None = None
         impacts = {k: _class(v) for k, v in a.get("impacts", {}).items()}
         regulatory_tags = _risk_tags((a.get("impacts", {}).get("imp5_risco_reclamacao") or {}))
         rows.append({
-            **row, "operator": attendant, "protocol": protocol,
+            **row, "operator": attendant, "operator_origin":a.get("atendente_origem","Não informada"),
+            "operator_evidence":a.get("atendente_evidencia",""), "protocol": protocol,
             "summary": a.get("resumo", ""), "dissatisfaction": a.get("principal_insatisfacao", ""),
             "operator_class": a.get("classificacao_operador", ""), "resolved": _class(a.get("atendimento_resolutivo")),
             "effort": _class(a.get("nivel_esforco_cliente")), "recontact": _class(a.get("probabilidade_recontato")),

@@ -24,6 +24,8 @@ def test_full_contract_and_scores():
     assert len([x for x in result["criteria"].values() if x["group"] == "cx"]) == 9
     assert 0 <= result["score_operador"] <= 100
     assert 0 <= result["score_experiencia"] <= 100
+    assert result["atendente"] == "Ana"
+    assert "meu nome é Ana" in result["atendente_evidencia"]
 
 
 def test_negation_does_not_become_transfer():
@@ -36,4 +38,3 @@ def test_negation_does_not_become_transfer():
 def test_cpf_is_not_enough_for_confirmation():
     _, result = analyze_text("#Atendente: Pode confirmar seu CPF 123.456.789-09?\n#Cliente: Sim.")
     assert result["criteria"]["at_cx_intro2"]["classification"] == "Não"
-

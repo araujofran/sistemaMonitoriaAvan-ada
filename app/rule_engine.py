@@ -8,6 +8,7 @@ from typing import Any
 
 from .criteria import CRITERIA
 from .domain import CriterionResult, Evidence, Turn
+from .products import extract_attendant_from_turns
 
 NO_EVIDENCE = "Não foi localizada evidência suficiente na transcrição para confirmar este critério."
 
@@ -100,11 +101,13 @@ def evaluate(turns: list[Turn], evidence: list[Evidence], filename: str) -> dict
     products = [e.detector for e in evidence if e.category == "products" and not e.is_negated]
     motive = intents[0].detector if intents else "Não identificado"
     name_match = next((re.search(r"(?:meu nome é|me chamo)\s+([A-ZÀ-Ý][a-zà-ÿ]+)", t.text_original, re.I) for t in turns if t.speaker == "CLIENTE"), None)
+    attendant, attendant_evidence = extract_attendant_from_turns(turns)
     risks = [label for detector,label in (("bacen","BACEN"),("procon","Consumidor"),("consumidor_gov","Consumidor"),("judicial","Judicial"),("fraude","Fraude")) if has(detector)] or ["Não Aplicável"]
     responsibility = "Plataforma" if has("erro_plataforma") or has("indisponibilidade") else "Política" if has("politica") else "Pessoa" if any(r.classification in {"Não","Parcial"} for r in results.values() if r.group in {"relationship","resolution","cx"}) else "Não identificado"
     return {
         "analysis_version": "1.0.0", "filename": filename, "data_interacao": datetime.now().isoformat(),
-        "nome_cliente": name_match.group(1) if name_match else "Não identificado", "atendente": "Não identificado",
+        "nome_cliente": name_match.group(1) if name_match else "Não identificado", "atendente": attendant,
+        "atendente_evidencia": attendant_evidence,
         "cpf": next((e.text for e in evidence if e.detector == "cpf"), "Não identificado"),
         "protocolo": next((re.sub(r"\D", "", e.text) for e in evidence if e.detector == "protocolo"), "Não identificado"),
         "produto_principal": products[0].replace("_", " ").title() if products else "Não identificado", "motivo_contato": motive.replace("_", " ").title(),
@@ -123,4 +126,3 @@ def evaluate(turns: list[Turn], evidence: list[Evidence], filename: str) -> dict
         "root_cause": {"causaraiz1_descricao": motive.replace("_"," "),"causaraiz2_motivo":"A evidência permite identificar a categoria da falha, mas não permite determinar tecnicamente o componente ou mecanismo que a originou.","causaraiz3_dono_jornada":"Sistema" if responsibility=="Plataforma" else "Política" if responsibility=="Política" else "Comunicação" if responsibility=="Pessoa" else "Outros","causaraiz4_evidencia":_texts([e for e in evidence if e.category in {"intent","operational","friction"}],2) or ["Evidência técnica insuficiente."]},
         "evidences": [asdict(e) for e in evidence],
     }
-

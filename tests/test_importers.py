@@ -2,7 +2,8 @@ from pathlib import Path
 
 from app.database import batch_summary
 from app.importers import load_source
-from app.products import infer_product
+from app.domain import Turn
+from app.products import extract_attendant_from_turns, infer_product
 from app.service import process_paths
 
 
@@ -35,6 +36,13 @@ def test_mojibake_product_is_normalized():
     product, source = infer_product({"ATENDENTE": "Ve�culos"}, "")
     assert product == "Ve\u00edculos"
     assert source == "metadata"
+
+
+def test_attendant_is_extracted_only_from_explicit_self_presentation():
+    turns = [Turn(1,"ATENDENTE","Bom dia, eu me chamo Haru. Como posso ajudar?","",0,50)]
+    assert extract_attendant_from_turns(turns) == ("Haru", "eu me chamo Haru")
+    false_positive = [Turn(1,"ATENDENTE","A informação que tenho aqui é que foi quitado.","",0,50)]
+    assert extract_attendant_from_turns(false_positive) == ("Não identificado", "")
 
 
 def test_xlsx_handle_is_released_after_read(tmp_path: Path):

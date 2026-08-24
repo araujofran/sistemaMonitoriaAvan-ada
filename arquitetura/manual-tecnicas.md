@@ -46,4 +46,6 @@ O painel devolve todos os atendimentos do recorte para permitir busca, filtro de
 
 Operador monitorado e usuário que enviou o lote são identidades distintas. O primeiro vem exclusivamente de coluna `ATENDENTE`, `OPERADOR` ou `AGENTE`; o segundo passa a ser registrado em `analysis_batches.uploaded_by`. Quando a fonte histórica não contém operador, o painel informa a cobertura em vez de inventar uma atribuição.
 
+Quando não existe coluna de operador, o motor também procura autoapresentação explícita em turnos rotulados como atendente: `me chamo`, `eu me chamo`, `meu nome é` e `quem fala é`. A extração persiste o nome, a origem e o trecho de evidência. Frases contextuais como “a informação aqui é” são deliberadamente excluídas para evitar falso positivo.
+
 As metas são propostas sobre a linha de base filtrada: +8 pontos no Score Operador, +10 em Experiência, +15 pontos percentuais de resolução e redução de 30% dos alertas críticos, sempre respeitando os limites válidos. Elas orientam o próximo ciclo, mas não alteram resultados históricos.

@@ -221,6 +221,27 @@ def enrich_existing_causal() -> dict:
     return {"updated":updated,"mode":"shadow"}
 
 
+def enrich_existing_attendants() -> dict:
+    from .products import extract_attendant_from_turns
+    init_db(); updated = 0; unresolved = 0
+    with connect() as db:
+        rows = [dict(r) for r in db.execute("SELECT id,analysis_json FROM interactions")]
+        for row in rows:
+            analysis = json.loads(row["analysis_json"])
+            if str(analysis.get("atendente") or "").strip() not in {"", "Não identificado"}:
+                continue
+            turns = [dict(t) for t in db.execute("SELECT speaker,text_original FROM transcript_turns WHERE interaction_id=? ORDER BY turn_number", (row["id"],))]
+            attendant, evidence = extract_attendant_from_turns(turns)
+            if attendant == "Não identificado":
+                unresolved += 1; continue
+            analysis["atendente"] = attendant
+            analysis["atendente_origem"] = "autoapresentação na transcrição"
+            analysis["atendente_evidencia"] = evidence
+            db.execute("UPDATE interactions SET analysis_json=? WHERE id=?", (json.dumps(analysis,ensure_ascii=False),row["id"]))
+            updated += 1
+    return {"updated":updated,"unresolved":unresolved,"method":"autoapresentação explícita do atendente"}
+
+
 def list_batches() -> list[dict]:
     with connect() as db:
         return [dict(r) for r in db.execute("SELECT * FROM analysis_batches ORDER BY created_at DESC")]

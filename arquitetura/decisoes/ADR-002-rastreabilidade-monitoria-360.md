@@ -14,3 +14,7 @@ Entregar toda a lista do recorte, filtros locais de risco, busca, exportação C
 ## Consequências
 
 A rastreabilidade passa a cobrir todo o recorte. Respostas maiores exigem mais tráfego no navegador; paginação de servidor será considerada caso a volumetria cresça significativamente. Dados históricos sem operador ou usuário de upload continuam explicitamente ausentes, pois não serão fabricados.
+
+## Complemento de implementação
+
+A massa de Consignado não possui coluna de operador, mas contém autoapresentações nos turnos. A extração passou a considerar apenas construções explícitas, com persistência do trecho probatório. O retroprocessamento de 2026-08-24 recuperou 785 nomes e preservou 280 como não identificados. Um backup foi criado antes da operação.
