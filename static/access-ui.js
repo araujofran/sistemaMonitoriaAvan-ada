@@ -1,0 +1,1 @@
+(async()=>{const r=await fetch('/api/v1/auth/me');if(!r.ok)return;const u=await r.json();if(u.role!=='admin'){document.querySelectorAll('#admin,[href="/admin/diagnostics"],[href="/admin/governance"]').forEach(x=>x.hidden=true)}})();

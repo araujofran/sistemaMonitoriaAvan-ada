@@ -1,0 +1,40 @@
+from __future__ import annotations
+
+CRITERIA = {
+    "at_rel_cord1": ("Tratamento pelo nome", "relationship", 3.5, False),
+    "at_rel_cord2": ("Desculpas", "relationship", 3.5, False),
+    "at_rel_cord3": ("Acolhimento", "relationship", 3.5, False),
+    "at_rel_cord4": ("Empatia genuína", "relationship", 3.5, False),
+    "at_rel_cord5": ("Paciência", "relationship", 3.5, False),
+    "at_rel_cord6": ("Sem interrupção", "relationship", 3.5, False),
+    "at_rel_cord7": ("Calma", "relationship", 3.5, False),
+    "at_rel_ling1": ("Comunicação adequada", "relationship", 3.5, False),
+    "at_rel_ling2": ("Sem vícios", "relationship", 3.5, False),
+    "at_rel_ling3": ("Segurança", "relationship", 3.5, False),
+    "at_rel_ling4": ("Gerundismo", "relationship", 3.5, False),
+    "at_rel_ling5": ("Clareza", "relationship", 4.5, False),
+    "at_rel_cond1": ("Objetividade", "relationship", 3.5, False),
+    "at_rel_cond2": ("Foco", "relationship", 3.5, False),
+    "at_resol_solic1": ("Proatividade", "resolution", 5, True),
+    "at_resol_solic2": ("Esforço do cliente", "resolution", 5, True),
+    "at_cx_intro1": ("Contato", "cx", 4, True),
+    "at_cx_intro2": ("Confirmação de dados", "cx", 4, True),
+    "at_cx_compr1": ("Sondagem adequada", "cx", 4, True),
+    "at_cx_compr2": ("Motivo identificado", "cx", 4, True),
+    "at_cx_compr3": ("Cliente não repetiu informações", "cx", 4, True),
+    "at_cx_compr4": ("Validou o entendimento", "cx", 5, True),
+    "at_cx_classif1": ("Sem risco de reincidência", "cx", 5, True),
+    "at_cx_classif2": ("Próximos passos", "cx", 5, True),
+    "at_cx_classif3": ("Atendeu à expectativa", "cx", 5, True),
+    "at_inad_compr1": ("Direcionamento para pesquisa", "noncompliance", 0, False),
+    "at_inad_compr2": ("Omissão do protocolo", "noncompliance", 0, False),
+    "at_inad_compr3": ("Falta de informação sobre prazo", "noncompliance", 0, False),
+    "at_inad_compr4": ("Alteração de prazo", "noncompliance", 0, False),
+    "at_inad_compr5": ("Desligamento inadequado", "noncompliance", 0, False),
+    "at_inad_compr6": ("Uso de linguagem inadequada", "noncompliance", 0, False),
+    "at_inad_compr7": ("Causar prejuízo", "noncompliance", 0, False),
+    "inv_extra1": ("Reconhecimento excepcional", "extra", 0, False),
+}
+
+GROUP_COUNTS = {"relationship": 14, "resolution": 2, "cx": 9, "noncompliance": 7, "extra": 1}
+

@@ -1,0 +1,1 @@
+.criterion-row{cursor:pointer}.criterion-row:hover{background:#f2f7ff}.pager{display:flex;justify-content:center;align-items:center;gap:14px;padding:15px}.pager button{border:1px solid #d8e0eb;border-radius:8px;background:#0b1c3d;color:#fff;padding:8px 12px;cursor:pointer}.pager button:disabled{opacity:.4;cursor:not-allowed}

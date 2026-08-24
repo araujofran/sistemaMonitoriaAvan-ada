@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Jornada Causal — Regex Intelligence</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/journey.css">
+  <link rel="stylesheet" href="/static/journey-fixes.css">
+</head>
+<body class="journey-body">
+  <header class="app-topbar">
+    <a class="brand" href="/"><span class="brand-mark">✓</span><span>Regex Intelligence</span></a>
+    <nav aria-label="Navegação principal">
+      <a href="/">Command Center</a>
+      <a class="active" href="/journey">Jornada em lote</a>
+      <a href="/docs">API</a>
+    </nav>
+  </header>
+  <main class="journey-shell">
+    <div class="journey-title-row">
+      <div><p class="journey-kicker">INTELIGÊNCIA CAUSAL</p><h1>Jornada dos atendimentos</h1><p>Da voz do cliente à causa raiz, com evidência e sem inferência técnica indevida.</p></div>
+      <div class="journey-filters">
+        <label>Lote<select id="batch-filter"><option value="">Todos os lotes</option></select></label>
+        <label>Produto<select id="product-filter"><option value="">Todos os produtos</option></select></label>
+      </div>
+    </div>
+
+    <section class="journey-metrics" aria-label="Indicadores principais">
+      <article class="gradient-card blue"><small>Atendimentos analisados</small><strong id="metric-total">0</strong><span>base selecionada</span></article>
+      <article class="gradient-card violet"><small>Score médio de experiência</small><strong id="metric-experience">0</strong><span>de 100 pontos</span></article>
+      <article class="metric-card"><small>Atendimentos com fricção</small><strong id="metric-friction">0</strong><span id="metric-friction-share">0% da base</span></article>
+      <article class="metric-card"><small>Causa técnica específica</small><strong id="metric-root">0</strong><span>demais casos ficam como categoria</span></article>
+    </section>
+
+    <section class="journey-grid top-grid">
+      <article class="panel cause-list-panel">
+        <div class="panel-head"><div><h2>Causas apresentadas</h2><p>Principais categorias extraídas da voz do cliente</p></div></div>
+        <div id="presented-list" class="rank-list"></div>
+      </article>
+      <article class="panel funnel-panel">
+        <div class="panel-head"><div><h2>Funil causal da jornada</h2><p>Cobertura de evidência em cada nível do diagnóstico</p></div><span class="info-dot" aria-label="O funil não representa conversão comercial">i</span></div>
+        <div class="funnel-layout"><svg id="funnel" role="img" aria-label="Funil causal"></svg><div id="funnel-legend" class="funnel-legend"></div></div>
+      </article>
+    </section>
+
+    <section class="journey-grid lower-grid">
+      <article class="panel"><div class="panel-head"><div><h2>Distribuição por produto</h2><p>Onde os atendimentos e causas se concentram</p></div></div><div class="donut-layout"><div id="product-donut" class="donut"><span id="donut-total">0</span><small>análises</small></div><div id="product-legend" class="donut-legend"></div></div></article>
+      <article class="panel"><div class="panel-head"><div><h2>Responsabilidade e dono da jornada</h2><p>Categorias comprovadas ou explicitamente não identificadas</p></div></div><div id="responsibility-bars" class="bar-list"></div></article>
+    </section>
+
+    <section class="panel path-panel">
+      <div class="panel-head"><div><h2>Trilhas causais dos atendimentos</h2><p>Clique em uma linha para abrir o relatório completo</p></div><span id="path-count"></span></div>
+      <div class="path-table-wrap"><table class="path-table"><thead><tr><th>Atendimento</th><th>Voz do cliente</th><th>Causa motivadora</th><th>Fator da jornada</th><th>Causa raiz</th></tr></thead><tbody id="path-rows"></tbody></table></div>
+    </section>
+    <div id="journey-empty" class="empty-state" hidden>Nenhuma análise encontrada para os filtros selecionados.</div>
+  </main>
+  <script src="/static/journey.js"></script><script src="/static/governance-client.js"></script>
+</body>
+</html>

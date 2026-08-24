@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Explicabilidade de Notas e Inaderências</title>
+  <link rel="stylesheet" href="/static/explainability.css">
+  <link rel="stylesheet" href="/static/explainability-trace.css">
+</head>
+<body>
+  <header class="hero">
+    <div><small>GOVERNANÇA ANALÍTICA · SOMENTE CONSULTA</small><h1>Explicabilidade de Notas e Inaderências</h1><p>Entenda por que uma nota foi zerada e compare a política oficial com a simulação híbrida.</p></div>
+    <span class="read-only">Nenhuma nota é alterada</span>
+  </header>
+  <main>
+    <section class="method-grid">
+      <article><span class="engine regex">REGEX</span><h2>Quem decide hoje?</h2><strong>Regex + regras determinísticas</strong><p>Uma inaderência marcada como “Sim” zera a nota oficial.</p></article>
+      <article><span class="engine nlp">NLP</span><h2>Qual é o papel do NLP?</h2><strong>Contexto complementar</strong><p>Extrai tópico, sentimento, entidades e resumo. Não decide inaderência nem nota.</p></article>
+      <article><span class="engine hybrid">SIMULAÇÃO</span><h2>Como funciona o híbrido?</h2><strong>Ausência não é prova</strong><p>Ausências viram alerta; somente evidências explícitas graves mantêm o zeramento.</p></article>
+    </section>
+
+    <div id="loading" class="state">Calculando explicabilidade sobre o banco ativo…</div>
+    <div id="content" hidden>
+      <section id="kpis" class="kpis"></section>
+      <section class="comparison">
+        <article class="panel"><div class="panel-head"><div><small>DISTRIBUIÇÃO</small><h2>Nota oficial × nota simulada</h2></div><span class="legend"><i></i> Oficial <i></i> Simulada</span></div><div id="distribution"></div></article>
+        <article class="panel explanation"><small>COMO INTERPRETAR</small><h2>Por que a diferença pode ser tão grande?</h2><p id="impact-copy"></p><ul><li>A nota oficial permanece intocada.</li><li>A simulação não é uma decisão final de compliance.</li><li>Casos incertos devem seguir para revisão humana.</li></ul></article>
+      </section>
+
+      <section class="panel"><div class="panel-head"><div><small>CAUSAS</small><h2>Inaderências que acionam o zeramento</h2><p>Frequência, forma de detecção e efeito em cada política.</p></div></div><div class="table-wrap"><table><thead><tr><th>Inaderência</th><th>Ocorrências</th><th>Análise atual</th><th>Natureza</th><th>Regra atual</th><th>Política híbrida</th></tr></thead><tbody id="criteria"></tbody></table></div></section>
+
+      <section class="panel"><div class="panel-head"><div><small>AUDITORIA POR ATENDIMENTO</small><h2>Explicação detalhada</h2><p>Clique em um atendimento para consultar regras, evidências, metadados e NLP.</p></div><span id="result-count"></span></div>
+        <form id="filters" class="filters"><label>Status<select id="status"><option value="">Todos</option><option value="official_zero">Zerados oficialmente</option><option value="released_by_hybrid">Liberados na simulação</option><option value="hybrid_zero">Continuam zerados</option></select></label><label>Inaderência<select id="criterion"><option value="">Todas</option></select></label><label>Busca<input id="search" placeholder="Arquivo, operador ou produto"></label><button>Aplicar filtros</button><button type="button" id="clear">Limpar</button></form>
+        <div id="interactions" class="interaction-list"></div>
+      </section>
+    </div>
+  </main>
+  <dialog id="detail"><div class="dialog-head"><div><small>EXPLICAÇÃO AUDITÁVEL</small><h2 id="detail-title"></h2></div><button id="close">Fechar ✕</button></div><div id="detail-body"></div></dialog>
+  <script src="/static/explainability.js"></script>
+  <script src="/static/governance-client.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+data/*.db
+data/**/*.db
+data/**/*.db-*
+uploads/
+# Planilhas de entrada podem conter CPF e transcrições; nunca versionar dados reais.
+excel/
+backups/database/*.db
+.tmp/
+.env
+transcricoes/
+poc2/
+POC/
