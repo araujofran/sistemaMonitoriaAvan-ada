@@ -3,6 +3,7 @@ import json
 from app.database import connect
 from app.explainability import explainability_dashboard
 from app.scoring_policy import scores_for
+from app.report import _noncompliance_effect, _zeroes_score
 
 
 def _criterion(code, name, group, classification, score=0, evidence=None):
@@ -54,3 +55,11 @@ def test_policy_scores_keep_rigid_and_hybrid_versions():
     rigid, hybrid = scores_for({"criteria": criteria})
     assert rigid == 0
     assert hybrid == 75
+
+
+def test_report_effect_respects_hybrid_policy():
+    absence = _criterion("at_inad_compr2", "Protocolo", "noncompliance", "Sim")
+    severe = _criterion("at_inad_compr7", "Prejuízo", "noncompliance", "Sim", evidence=["prejuízo"])
+    assert _zeroes_score("at_inad_compr2", absence, "hybrid") is False
+    assert _noncompliance_effect("at_inad_compr2", absence, "hybrid") == "Alerta/dedução — não zera"
+    assert _zeroes_score("at_inad_compr7", severe, "hybrid") is True

@@ -2,6 +2,22 @@ from __future__ import annotations
 
 from html import escape
 
+HYBRID_ZEROING_CODES = {"at_inad_compr4", "at_inad_compr6", "at_inad_compr7"}
+
+
+def _zeroes_score(code: str, result: dict, policy: str) -> bool:
+    if result.get("group") != "noncompliance" or result.get("classification") != "Sim":
+        return False
+    return policy != "hybrid" or code in HYBRID_ZEROING_CODES
+
+
+def _noncompliance_effect(code: str, result: dict, policy: str) -> str:
+    if result.get("classification") != "Sim":
+        return "Sem efeito"
+    if _zeroes_score(code, result, policy):
+        return "Zera atendimento"
+    return "Alerta/dedução — não zera"
+
 
 def mask_cpf(value: str) -> str:
     digits = "".join(c for c in value if c.isdigit())
@@ -30,17 +46,19 @@ def _safe_metadata(metadata: dict) -> list[list[str]]:
 
 def render_report(a: dict) -> str:
     scoring_policy = a.get("scoring_policy", {})
-    policy_name = "Híbrida" if scoring_policy.get("policy") == "hybrid" else "Rígida"
+    active_policy = scoring_policy.get("policy", "rigid")
+    policy_name = "Híbrida" if active_policy == "hybrid" else "Rígida"
     policy_version = scoring_policy.get("version", "rigid-1.0")
     c = a["criteria"]
     criteria_table = lambda group: _table([[code,r["name"],r["weight"],r["classification"],r["factor"],r["score"],"; ".join(r["evidence"]) or r["justification"]] for code,r in c.items() if r["group"]==group], ["Código","Critério","Peso","Resultado","Fator","Nota","Evidência"])
-    noncomp = _table([[code,r["name"],r["classification"],r["penalty"],r["justification"]] for code,r in c.items() if r["group"]=="noncompliance"], ["Código","Critério","Resultado","Penalidade","Evidência"])
+    noncomp = _table([[code,r["name"],r["classification"],_noncompliance_effect(code,r,active_policy),r["justification"]] for code,r in c.items() if r["group"]=="noncompliance"], ["Código","Critério","Resultado","Efeito na política vigente","Evidência"])
     ces = _table([[code,v["classificacao"],v["justificativa"]] for code,v in a["ces"].items()],["Código","Classificação","Justificativa"])
     risks = _table([[k,v["classificacao"],v["justificativa"]] for k,v in a["impacts"].items()],["Código","Classificação","Justificativa"])
     failed = [r for r in c.values() if r["group"] in {"relationship","resolution","cx"} and r["classification"] in {"Não","Parcial"}]
     positives = [r for r in c.values() if r["group"] in {"relationship","resolution","cx"} and r["classification"]=="Sim"]
     failures = [["Sondagem inadequada", int(c["at_cx_compr1"]["classification"]=="Não"), c["at_cx_compr1"]["justification"]], ["Próximos passos não informados",int(c["at_cx_classif2"]["classification"]=="Não"),c["at_cx_classif2"]["justification"]], ["Validação ou registro incompleto",int(c["at_cx_intro2"]["classification"] in {"Não","Parcial"}),c["at_cx_intro2"]["justification"]]]
-    critical = any(r["classification"]=="Sim" for r in c.values() if r["group"]=="noncompliance")
+    identified_noncompliance = any(r["classification"]=="Sim" for r in c.values() if r["group"]=="noncompliance")
+    critical = any(_zeroes_score(code,r,active_policy) for code,r in c.items())
     rel=sum(r["score"] for r in c.values() if r["group"]=="relationship"); res=sum(r["score"] for r in c.values() if r["group"]=="resolution"); cx=sum(r["score"] for r in c.values() if r["group"]=="cx")
     metadata_rows = _safe_metadata(a.get("source_metadata", {}))
     source = a.get("source", {})
@@ -49,9 +67,9 @@ def render_report(a: dict) -> str:
 <section><p class='eyebrow dark'>1. CABEÇALHO DO ATENDIMENTO</p><h1>MONITORIA DE QUALIDADE</h1>{_table([[a['data_interacao'][:10],a['protocolo'],a['nome_cliente'],mask_cpf(a['cpf']),a['atendente'],a['produto_principal'],a['motivo_contato'],'Telefone']],['Data','Protocolo','Cliente','CPF','Atendente','Produto','Categoria','Canal'])}<div class='score'><small>NOTA FINAL DA MONITORIA</small><strong>{a['score_operador']} / 100</strong><span>{a['classificacao_operador']}</span></div><p><b>Política oficial de pontuação:</b> {policy_name} · versão {escape(str(policy_version))}</p>{source_html}</section>
 <section><h2>2. VISÃO GERAL DA MONITORIA</h2><h3>{'🔴 ALERTA CRÍTICO' if critical else '🟡 PONTO DE ATENÇÃO' if a['score_operador'] < 85 else '🟢 CASO CONTROLADO'}</h3><p>{escape(a['resumo'])} A classificação decorre exclusivamente dos critérios e evidências exibidos abaixo.</p></section>
 <section><h2>3. FEEDBACK DA MONITORIA</h2><h3>✅ Pontos Positivos</h3><p>{escape('; '.join(r['name'] for r in positives) or 'Nenhum ponto positivo comprovado.')}</p><h3>⚠️ Pontos de Melhoria</h3><p>{escape('; '.join(r['name'] for r in failed) or 'Não foram identificadas oportunidades relevantes de melhoria para o operador neste atendimento.')}</p><h3>🎓 Coaching Sugerido</h3><p>Confirmar o entendimento, esclarecer próximos passos e registrar evidências de conclusão antes do encerramento.</p></section>
-<section><h2>4. NOTA DA MONITORIA</h2>{_table([['Relacionamento e Conduta',50,rel],['Resolutividade',10,res],['CX',40,cx],['Inaderências','Zera atendimento','Sim' if critical else 'Não'],['Pontos Extras','Bônus',c['inv_extra1']['bonus']]],['Pilar','Peso máximo','Nota obtida'])}<h3>NOTA FINAL: {a['score_operador']}/100 — {a['classificacao_operador']}</h3></section>
+<section><h2>4. NOTA DA MONITORIA</h2>{_table([['Relacionamento e Conduta',50,rel],['Resolutividade',10,res],['CX',40,cx],['Inaderências',f'Política {policy_name}','Zera' if critical else 'Não zera'],['Pontos Extras','Bônus',c['inv_extra1']['bonus']]],['Pilar','Regra/Peso máximo','Resultado'])}<h3>NOTA FINAL: {a['score_operador']}/100 — {a['classificacao_operador']}</h3></section>
 <section><h2>5. DETALHAMENTO DA MONITORIA</h2><h3>🤝 Relacionamento e Conduta — {rel}/50</h3>{criteria_table('relationship')}<h3>🎯 Resolutividade — {res}/10</h3>{criteria_table('resolution')}<h3>💙 CX — {cx}/40</h3>{criteria_table('cx')}</section>
-<section><h2>6. 🚨 INADERÊNCIAS CRÍTICAS</h2><p>{'🚨 Inaderência crítica identificada' if critical else '✅ Nenhuma inaderência identificada'}</p>{noncomp}</section>
+<section><h2>6. 🚨 INADERÊNCIAS E EFEITOS</h2><p>{'🚨 Inaderência zeradora identificada na política vigente.' if critical else '⚠️ Inaderências identificadas como alerta/dedução; nenhuma delas zera este atendimento na política híbrida.' if identified_noncompliance else '✅ Nenhuma inaderência identificada.'}</p>{noncomp}</section>
 <div class='divider'><h1>INTELIGÊNCIA DE CX E QUALIDADE</h1></div>
 <section><h2>7. DIAGNÓSTICO DA EXPERIÊNCIA</h2><div class='cards'><article><small>Score Experiência</small><strong>{a['score_experiencia']}/100</strong></article><article><small>Resolutivo</small><strong>{a['atendimento_resolutivo']['classificacao']}</strong></article><article><small>Esforço</small><strong>{a['nivel_esforco_cliente']['classificacao']}</strong></article><article><small>Recontato</small><strong>{a['probabilidade_recontato']['classificacao']}</strong></article></div><p>Humor do cliente: {a['humor_cliente']['classificacao']}. Responsabilidade: {a['responsabilidade']}.</p></section>
 <section><h2>8. ESFORÇO E FRICÇÃO DA JORNADA</h2>{ces}<p><b>Fricção:</b> {a['cx1_friccao']['classificacao']} — {escape(a['cx1_friccao']['justificativa'])}</p></section>
