@@ -28,6 +28,16 @@ def _metadata_value(analysis: dict, *names: str) -> str | None:
     return next((str(normalized[name]) for name in names if name in normalized and _usable(normalized[name])), None)
 
 
+def _presented_category(analysis: dict) -> str:
+    # SENTIMENTO_CLIENTE frequently contains ordinal codes (1..5), not a
+    # business cause. Causal presentation must prefer textual category fields.
+    for name in ("categoria_1", "categoria"):
+        value = _metadata_value(analysis, name)
+        if value and not re.fullmatch(r"[+-]?\d+(?:[.,]\d+)?", value.strip()):
+            return value
+    return str(analysis.get("motivo_contato") or "Não identificado")
+
+
 def extract_customer_voice(analysis: dict) -> str:
     candidates = []
     for evidence in analysis.get("evidences", []):
@@ -48,7 +58,7 @@ def extract_customer_voice(analysis: dict) -> str:
 def interaction_path(analysis: dict) -> dict[str, str]:
     root = analysis.get("root_cause", {})
     voice = extract_customer_voice(analysis)
-    presented = _metadata_value(analysis, "sentimento_cliente", "categoria_1", "categoria") or analysis.get("motivo_contato", "Não identificado")
+    presented = _presented_category(analysis)
     motivating = analysis.get("principal_insatisfacao")
     if not _usable(motivating):
         motivating = root.get("causaraiz1_descricao") or analysis.get("motivo_contato") or "Não identificado"
@@ -106,4 +116,3 @@ def journey_dashboard(batch_id: str | None = None, product: str | None = None) -
         "funnel":funnel, "stages":{key:_top(counter) for key,counter in stages.items()},
         "products":_top(products), "paths":paths[:200],
     }
-
